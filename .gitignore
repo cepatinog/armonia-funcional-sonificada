@@ -1,0 +1,13 @@
+# Material con derechos de autor: nunca se versiona ni se publica
+referencias/
+
+# Python
+__pycache__/
+*.pyc
+
+# Metadatos de Windows/WSL al copiar archivos
+*:Zone.Identifier
+
+# Editores
+.vscode/
+.idea/
