@@ -1,0 +1,135 @@
+/* estilos.css — apariencia mínima de la Fase 1: una tarjeta limpia y legible. */
+
+:root {
+  --color-fondo: #f5f3ee;
+  --color-tinta: #2b2620;
+  --color-acento: #b3552e;        /* teclas y detalles resaltados */
+  --color-borde: #d8d2c6;
+  --color-tarjeta: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  background: var(--color-fondo);
+  color: var(--color-tinta);
+  line-height: 1.5;
+}
+
+header {
+  text-align: center;
+  padding: 2rem 1rem 0.5rem;
+}
+
+header h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.9rem;
+}
+
+.subtitulo {
+  margin: 0;
+  color: #6b6358;
+  font-size: 0.95rem;
+}
+
+main {
+  max-width: 720px;
+  margin: 1.5rem auto 3rem;
+  padding: 0 1rem;
+}
+
+.tarjeta {
+  background: var(--color-tarjeta);
+  border: 1px solid var(--color-borde);
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(43, 38, 32, 0.07);
+}
+
+.tarjeta h2 {
+  margin-top: 0;
+}
+
+/* Mensaje de estado mientras Pyodide y NumPy se descargan (varios segundos).
+   Con .error se vuelve un aviso visible; JS le pone esa clase si algo falla. */
+.estado-motor {
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  background: #efece4;
+  color: #6b6358;
+  font-style: italic;
+}
+
+.estado-motor.error {
+  background: #f7e3dd;
+  color: #8c2f12;
+  font-style: normal;
+}
+
+.estado-motor.oculto {
+  display: none;
+}
+
+.partitura {
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+
+.piano {
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+
+/* Teclado SVG: los colores de las teclas viven aquí, no en el JS. */
+.piano .tecla-blanca {
+  fill: #fdfdfb;
+  stroke: #4a443c;
+  stroke-width: 1;
+}
+
+.piano .tecla-negra {
+  fill: #2b2620;
+  stroke: #1a1612;
+  stroke-width: 1;
+}
+
+.piano .tecla-blanca.activa {
+  fill: #e8a181;
+}
+
+.piano .tecla-negra.activa {
+  fill: var(--color-acento);
+}
+
+button {
+  font: inherit;
+  font-size: 1.05rem;
+  padding: 0.5rem 1.4rem;
+  border: 1px solid var(--color-acento);
+  border-radius: 8px;
+  background: var(--color-acento);
+  color: #fff;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+button:disabled {
+  background: var(--color-borde);
+  border-color: var(--color-borde);
+  color: #8a8478;
+  cursor: not-allowed;
+}
+
+footer {
+  text-align: center;
+  padding: 1rem;
+  color: #8a8478;
+  font-size: 0.85rem;
+}

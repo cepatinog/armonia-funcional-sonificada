@@ -124,7 +124,7 @@ en `referencias/` no se versionan ni se publican (.gitignore).
 
 ## Estado actual
 
-- [ ] Fase 1: prototipo mínimo (un acorde de Do mayor: partitura + piano + sonido)
+- [x] Fase 1: prototipo mínimo (un acorde de Do mayor: partitura + piano + sonido)
 - [ ] Fase 2: motor de capítulos desde JSON + selector de tonalidad
 - [ ] Fase 3: refinamiento sonoro (timbres, arpegios, voces separadas)
 - [ ] Fase 4: navegación completa + despliegue en GitHub Pages

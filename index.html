@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Armonía Funcional Sonificada</title>
+  <link rel="stylesheet" href="css/estilos.css">
+  <!--
+    Librerías por CDN, con versión pineada (sin npm, sin build step):
+    - VexFlow 4 (build UMD): expone el global Vex.Flow para la partitura.
+    - Pyodide 0.29: expone el global loadPyodide para ejecutar Python.
+  -->
+  <script defer src="https://cdn.jsdelivr.net/npm/vexflow@4.2.5/build/cjs/vexflow.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/pyodide/v0.29.4/full/pyodide.js"></script>
+  <!-- Módulos propios. Orden: utilidades primero, el orquestador al final. -->
+  <script defer src="js/puente-audio.js"></script>
+  <script defer src="js/partitura.js"></script>
+  <script defer src="js/piano.js"></script>
+  <script defer src="js/app.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Armonía Funcional Sonificada</h1>
+    <p class="subtitulo">
+      Ejemplos sonoros del libro <em>Armonía Funcional – del clásico al jazz</em>
+      de Jaime Jaramillo Arias
+    </p>
+  </header>
+
+  <main>
+    <section class="tarjeta" id="tarjeta-ejemplo">
+      <h2 id="titulo-ejemplo"></h2>
+      <p id="descripcion-ejemplo"></p>
+
+      <div id="estado-motor" class="estado-motor">Cargando motor musical…</div>
+
+      <div id="partitura" class="partitura"></div>
+      <div id="piano" class="piano"></div>
+
+      <button id="boton-escuchar" disabled>▶ Escuchar</button>
+    </section>
+  </main>
+
+  <footer>
+    <p>Prototipo · Fase 1 · El sonido se genera con Python (NumPy) en tu navegador vía Pyodide.</p>
+  </footer>
+</body>
+</html>
