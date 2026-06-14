@@ -1,0 +1,121 @@
+{
+  "capitulo": 1,
+  "titulo": "La armonía tonal funcional",
+  "ejemplos": [
+    {
+      "id": "cap01-ej01",
+      "titulo": "Columna de armónicos desde C2",
+      "descripcion": "Un sonido fundamental (C2) arrastra una serie de parciales cada vez más agudos y débiles. Al recorrerlos uno a uno —o apilándolos— aparece la materia prima del sistema tonal: primero la quinta, luego la tercera y más arriba la séptima menor.",
+      "tipo": "secuencia",
+      "eventos": [
+        { "notas": ["C2"], "dur": 0.5 },
+        { "notas": ["C3"], "dur": 0.5 },
+        { "notas": ["C4"], "dur": 0.5 },
+        { "notas": ["G4"], "dur": 0.5 },
+        { "notas": ["C5"], "dur": 0.5 },
+        { "notas": ["E5"], "dur": 0.5 },
+        { "notas": ["G5"], "dur": 0.5 },
+        { "notas": ["Bb5"], "dur": 0.5 },
+        { "notas": ["C6"], "dur": 0.5 },
+        { "notas": ["D6"], "dur": 0.5 },
+        { "notas": ["E6"], "dur": 0.5 },
+        { "notas": ["F#6"], "dur": 0.5 }
+      ],
+      "modos": ["secuencial", "acumulativo"]
+    },
+    {
+      "id": "cap01-ej02",
+      "titulo": "Columna en espejo: subarmónicos desde C6",
+      "descripcion": "Bajo ciertas condiciones el ataque también genera subarmónicos: una columna en espejo que desciende con los mismos intervalos. El primer sonido nuevo hacia el grave es la cuarta (F), origen de la función subdominante.",
+      "tipo": "secuencia",
+      "eventos": [
+        { "notas": ["C6"], "dur": 0.5 },
+        { "notas": ["C5"], "dur": 0.5 },
+        { "notas": ["F4"], "dur": 0.5 },
+        { "notas": ["C4"], "dur": 0.5 },
+        { "notas": ["Ab3"], "dur": 0.5 },
+        { "notas": ["F3"], "dur": 0.5 },
+        { "notas": ["D3"], "dur": 0.5 },
+        { "notas": ["C2"], "dur": 0.5 },
+        { "notas": ["Bb1"], "dur": 0.5 },
+        { "notas": ["A1"], "dur": 0.5 },
+        { "notas": ["Gb1"], "dur": 0.5 },
+        { "notas": ["F1"], "dur": 0.5 }
+      ],
+      "modos": ["secuencial", "acumulativo"]
+    },
+    {
+      "id": "cap01-ej03",
+      "titulo": "Las tres funciones por quintas",
+      "descripcion": "Las dos relaciones más fuertes de la columna definen las tres funciones tonales: sobre la tónica (C), la quinta justa hacia el agudo es la dominante (G); la quinta hacia el grave —el primer subarmónico distinto— es la subdominante (F).",
+      "tipo": "secuencia",
+      "eventos": [
+        { "notas": ["C4"], "dur": 0.8 },
+        { "notas": ["G4"], "dur": 0.8 },
+        { "notas": ["F3"], "dur": 0.8 }
+      ],
+      "modos": ["secuencial", "acumulativo"]
+    },
+    {
+      "id": "cap01-ej04",
+      "titulo": "La triada mayor en los armónicos",
+      "descripcion": "Sumando el fundamental, su tercera y su quinta —tomados de los armónicos cercanos— se obtiene la triada mayor C–E–G. Es la razón de que el sistema tonal sea triádico y se construya por terceras.",
+      "tipo": "acorde",
+      "eventos": [
+        { "cifrado": "C", "notas": ["C4", "E4", "G4"], "dur": 1.5 }
+      ],
+      "modos": ["bloque", "arpegio"]
+    },
+    {
+      "id": "cap01-ej05",
+      "titulo": "Las triadas de las tres funciones tejen la escala mayor",
+      "descripcion": "Las triadas de las tres funciones (C–E–G, F–A–C, G–B–D) reúnen entre todas los siete sonidos de la escala mayor. C y G se repiten, reforzando los dos polos del sistema: reposo y tensión.",
+      "tipo": "progresion",
+      "eventos": [
+        { "cifrado": "C", "notas": ["C4", "E4", "G4"], "dur": 1.3 },
+        { "cifrado": "F", "notas": ["F3", "A3", "C4"], "dur": 1.3 },
+        { "cifrado": "G", "notas": ["G3", "B3", "D4"], "dur": 1.3 }
+      ],
+      "modos": ["bloque", "arpegio"]
+    },
+    {
+      "id": "cap01-ej06",
+      "titulo": "La séptima menor y el acorde dominante",
+      "descripcion": "Más arriba en los armónicos aparece la séptima menor (C–E–G–Bb), pero ese Bb no pertenece a la escala. Solo desde la dominante la 7ª menor (F) es diatónica en Do: por eso el acorde dominante por excelencia es G7.",
+      "tipo": "progresion",
+      "eventos": [
+        { "cifrado": "C7", "notas": ["C4", "E4", "G4", "Bb4"], "dur": 1.5 },
+        { "cifrado": "G7", "notas": ["G3", "B3", "D4", "F4"], "dur": 1.5 }
+      ],
+      "modos": ["bloque", "arpegio"]
+    },
+    {
+      "id": "cap01-ej07",
+      "titulo": "Las siete triadas diatónicas por terceras",
+      "descripcion": "Apilando terceras sobre cada grado de la escala mayor se obtiene una triada por grado: C, Dm, Em, F, G, Am y B disminuido. En total, tres mayores, tres menores y una disminuida.",
+      "tipo": "progresion",
+      "eventos": [
+        { "cifrado": "C",    "notas": ["C4", "E4", "G4"], "dur": 1.0 },
+        { "cifrado": "Dm",   "notas": ["D4", "F4", "A4"], "dur": 1.0 },
+        { "cifrado": "Em",   "notas": ["E4", "G4", "B4"], "dur": 1.0 },
+        { "cifrado": "F",    "notas": ["F4", "A4", "C5"], "dur": 1.0 },
+        { "cifrado": "G",    "notas": ["G4", "B4", "D5"], "dur": 1.0 },
+        { "cifrado": "Am",   "notas": ["A4", "C5", "E5"], "dur": 1.0 },
+        { "cifrado": "Bdim", "notas": ["B4", "D5", "F5"], "dur": 1.0 }
+      ],
+      "modos": ["bloque", "arpegio"]
+    },
+    {
+      "id": "cap01-ej08",
+      "titulo": "Calidades de triada sobre una misma raíz",
+      "descripcion": "Los intervalos se miden desde la fundamental del acorde, no desde la tónica. Así se nombran las calidades: mayor (3M + 5J), menor (3m + 5J) y disminuida (3m + 5dim). Misma raíz, tres colores distintos.",
+      "tipo": "progresion",
+      "eventos": [
+        { "cifrado": "C",    "notas": ["C4", "E4", "G4"],  "dur": 1.3 },
+        { "cifrado": "Cm",   "notas": ["C4", "Eb4", "G4"], "dur": 1.3 },
+        { "cifrado": "Cdim", "notas": ["C4", "Eb4", "Gb4"], "dur": 1.3 }
+      ],
+      "modos": ["bloque", "arpegio"]
+    }
+  ]
+}

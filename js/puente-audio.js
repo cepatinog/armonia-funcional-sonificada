@@ -57,11 +57,28 @@ const Motor = {
     return plan;
   },
 
-  /* Sintetiza un acorde en Python y lo reproduce. Devuelve una promesa que
-   * se resuelve cuando el sonido termina (útil para deshabilitar el botón). */
-  async tocarAcorde(notas, dur = 2.0) {
-    // El AudioContext solo puede crearse/activarse tras un gesto del usuario
-    // (política de autoplay), por eso vive aquí y no en iniciar().
+  /* Plan para un ejemplo de varios eventos (secuencia o progresión):
+   * { pasos: [ {vexflow, alteraciones, midi, hz}, … ], midi_union: [..] }.
+   * Los eventos viajan a Python como string JSON. */
+  planDeEventos(eventos) {
+    const proxy = this.teoria.plan_de_eventos(JSON.stringify(eventos));
+    const plan = proxy.toJs({ dict_converter: Object.fromEntries });
+    proxy.destroy();
+    return plan;
+  },
+
+  /* Cronología de resaltado del piano para un ejemplo+modo (de sintesis.py):
+   * { segmentos: [ {t: seg, midis: [..]}, .. ], total: seg }. */
+  lineaDeTiempo(eventos, modo) {
+    const proxy = this.sintesis.linea_de_tiempo(JSON.stringify(eventos), modo);
+    const linea = proxy.toJs({ dict_converter: Object.fromEntries });
+    proxy.destroy();
+    return linea;
+  },
+
+  /* Crea o reactiva el AudioContext. Solo puede hacerse tras un gesto del
+   * usuario (política de autoplay), por eso no vive en iniciar(). */
+  async _asegurarAudio() {
     if (this.audioCtx === null) {
       this.audioCtx = new (window.AudioContext || window.webkitAudioContext)({
         sampleRate: this.FS,
@@ -70,15 +87,23 @@ const Motor = {
     if (this.audioCtx.state === "suspended") {
       await this.audioCtx.resume();
     }
+  },
 
-    // Python devuelve np.float32; getBuffer da una vista sobre la memoria
-    // WASM, que copiamos con slice() antes de liberarla.
-    const proxy = this.sintesis.acorde_bloque(notas, dur);
+  /* Copia las muestras float32 de un PyProxy (vista sobre la memoria WASM) al
+   * heap de JS con slice() y libera la memoria del lado Python. */
+  _extraerMuestras(proxy) {
     const vista = proxy.getBuffer("f32");
     const muestras = vista.data.slice();
     vista.release();
     proxy.destroy();
+    return muestras;
+  },
 
+  /* Reproduce un array float32 y devuelve una promesa que se resuelve cuando el
+   * sonido termina. Si se pasan `linea` (cronología de sintesis.py) y la función
+   * `alResaltar(midis)`, enciende el teclado en sincronía con el audio y lo apaga
+   * al terminar. */
+  reproducir(muestras, linea = null, alResaltar = null) {
     const buffer = this.audioCtx.createBuffer(1, muestras.length, this.FS);
     buffer.copyToChannel(muestras, 0);
 
@@ -87,8 +112,56 @@ const Motor = {
     fuente.connect(this.audioCtx.destination);
 
     return new Promise((resolver) => {
-      fuente.onended = resolver;
+      const t0 = this.audioCtx.currentTime;
+      fuente.onended = () => {
+        if (alResaltar) alResaltar([]); // apagar el teclado al terminar
+        resolver();
+      };
       fuente.start();
+      if (linea && alResaltar) this._sincronizarResaltado(linea, t0, alResaltar);
     });
+  },
+
+  /* Enciende el teclado siguiendo la cronología, guiándose por el reloj del
+   * AudioContext (no por temporizadores, que se desajustan). */
+  _sincronizarResaltado(linea, t0, alResaltar) {
+    const segmentos = linea.segmentos || [];
+    // El sonido se OYE un poco después de programarse; se descuenta esa latencia
+    // para que la imagen coincida con lo que se escucha.
+    const latencia = this.audioCtx.outputLatency || this.audioCtx.baseLatency || 0;
+    let i = 0;
+    const paso = () => {
+      const transcurrido = this.audioCtx.currentTime - t0 - latencia;
+      while (i < segmentos.length && transcurrido >= segmentos[i].t) {
+        alResaltar(segmentos[i].midis);
+        i++;
+      }
+      if (i < segmentos.length) requestAnimationFrame(paso);
+    };
+    requestAnimationFrame(paso);
+  },
+
+  /* Sintetiza un acorde en bloque en Python y lo reproduce. */
+  async tocarAcorde(notas, dur = 2.0) {
+    await this._asegurarAudio();
+    return this.reproducir(this._extraerMuestras(this.sintesis.acorde_bloque(notas, dur)));
+  },
+
+  /* Reproduce una secuencia ("secuencial" o "acumulativo"). Si se da
+   * `alResaltar`, sincroniza el teclado con el audio. */
+  async tocarSecuencia(eventos, modo = "secuencial", alResaltar = null) {
+    await this._asegurarAudio();
+    const muestras = this._extraerMuestras(this.sintesis.secuencia(JSON.stringify(eventos), modo));
+    const linea = alResaltar ? this.lineaDeTiempo(eventos, modo) : null;
+    return this.reproducir(muestras, linea, alResaltar);
+  },
+
+  /* Reproduce una progresión de acordes ("bloque" o "arpegio"). Si se da
+   * `alResaltar`, sincroniza el teclado con el audio. */
+  async tocarProgresion(eventos, modo = "bloque", alResaltar = null) {
+    await this._asegurarAudio();
+    const muestras = this._extraerMuestras(this.sintesis.progresion(JSON.stringify(eventos), modo));
+    const linea = alResaltar ? this.lineaDeTiempo(eventos, modo) : null;
+    return this.reproducir(muestras, linea, alResaltar);
   },
 };

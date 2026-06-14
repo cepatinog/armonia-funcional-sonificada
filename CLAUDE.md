@@ -125,7 +125,11 @@ en `referencias/` no se versionan ni se publican (.gitignore).
 ## Estado actual
 
 - [x] Fase 1: prototipo mínimo (un acorde de Do mayor: partitura + piano + sonido)
-- [ ] Fase 2: motor de capítulos desde JSON + selector de tonalidad
-- [ ] Fase 3: refinamiento sonoro (timbres, arpegios, voces separadas)
-- [ ] Fase 4: navegación completa + despliegue en GitHub Pages
+- [x] Fase 2: motor de capítulos desde JSON — visor con navegación, gran
+  pentagrama con cifrado y piano sincronizado con el audio (capítulo 1
+  sonificado en Do; modos secuencial/acumulativo/bloque/arpegio).
+- [ ] Transposición a las 12 tonalidades con deletreo enarmónico + selector
+  (la estructura letra+alteración de `teoria.py` ya está lista).
+- [ ] Fase 3: refinamiento sonoro (timbres, voces separadas)
+- [ ] Fase 4: navegación completa por capítulos + más capítulos
 (Actualizar esta lista al completar cada fase.)

@@ -28,21 +28,31 @@
   </header>
 
   <main>
-    <section class="tarjeta" id="tarjeta-ejemplo">
-      <h2 id="titulo-ejemplo"></h2>
-      <p id="descripcion-ejemplo"></p>
+    <p id="titulo-capitulo" class="titulo-capitulo"></p>
 
+    <section class="tarjeta" id="visor">
       <div id="estado-motor" class="estado-motor">Cargando motor musical…</div>
+
+      <div class="cabecera-ejemplo">
+        <h2 id="titulo-ejemplo"></h2>
+        <span id="contador-ejemplo" class="contador"></span>
+      </div>
+      <p id="descripcion-ejemplo"></p>
 
       <div id="partitura" class="partitura"></div>
       <div id="piano" class="piano"></div>
 
-      <button id="boton-escuchar" disabled>▶ Escuchar</button>
+      <div id="modos" class="modos"></div>
+
+      <nav class="navegacion">
+        <button id="boton-anterior" disabled>← Anterior</button>
+        <button id="boton-siguiente" disabled>Siguiente →</button>
+      </nav>
     </section>
   </main>
 
   <footer>
-    <p>Prototipo · Fase 1 · El sonido se genera con Python (NumPy) en tu navegador vía Pyodide.</p>
+    <p>Fase 2 · El sonido se genera con Python (NumPy) en tu navegador vía Pyodide.</p>
   </footer>
 </body>
 </html>

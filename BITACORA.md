@@ -6,6 +6,106 @@ reciente va primero.
 
 ---
 
+## Sesión 2 — 13 de junio de 2026
+
+**Resultado:** Fase 2 — capítulo 1 sonificado. La app pasó de un acorde
+hardcodeado a un **motor dirigido por datos**: lee `data/capitulo-01.json`,
+muestra los ejemplos de uno en uno con navegación, los dibuja en gran
+pentagrama con cifrado, y reproduce cada modo (secuencial, acumulativo, bloque,
+arpegio) **encendiendo el teclado en sincronía con el audio**.
+
+(Sesión retomada con Opus 4.8: la Fase 1 la hizo el modelo Fable 5, así que se
+partió de leer el código, la bitácora y `CLAUDE.md` para reconstruir el estado.)
+
+### Paso 1 — Localizar el capítulo 1 en los PDFs
+
+Los PDFs de `referencias/` están numerados `-3, -6 … -15`, sin un `-1` obvio.
+Inspeccionándolos con `pdftotext` se descubrió que **cada PDF es una página del
+libro**: el índice (pág. 7 del PDF) sitúa el capítulo 1 *"La armonía tonal
+funcional"* en las páginas 7–9 (PDF-9, -10, -11); el capítulo 2 empieza en la
+pág. 10. De ahí salió el material musical: columna de armónicos desde C2,
+columna espejo de subarmónicos, las tres funciones por quintas, la triada mayor
+en los armónicos, las triadas de las funciones tejiendo la escala, el dominante
+con 7ª menor, las siete triadas diatónicas y las calidades de triada.
+
+### Paso 2 — Decisiones de alcance
+
+- **Transposición aplazada.** Esta iteración renderiza todo en Do (la forma
+  normalizada del libro). El selector de las 12 tonalidades queda para después,
+  para mantener commits pequeños y enfocados.
+- **UI de un ejemplo a la vez + navegación** (anterior/siguiente + contador),
+  no una lista apilada.
+- El usuario (experto musical) revisa y ajusta el JSON propuesto.
+
+### Paso 3 — `data/capitulo-01.json` y el motor de modos
+
+- 8 ejemplos con el esquema de `CLAUDE.md` (`tipo`, `eventos`, `modos`),
+  descripciones **parafraseadas** (derechos del libro).
+- `py/sintesis.py` aprendió a tocar en el tiempo, no solo en bloque: helper
+  `_voz` (suma de tonos + ADSR sin normalizar, para concatenar tramos), y
+  `secuencia` (`secuencial`/`acumulativo`) y `progresion` (`bloque`/`arpegio`,
+  con `_arpegio` que escalona las notas y las sostiene hasta el fin del acorde).
+- `py/teoria.py` ganó `plan_de_eventos`: un `plan_de_render` por evento (más el
+  `cifrado` passthrough) y `midi_union` para el piano. Sigue siendo la única
+  fuente de verdad de lo que se ve.
+- Los eventos viajan de JS a Python como **string JSON** (`JSON.stringify` ↔
+  `json.loads`): así los módulos no se acoplan a Pyodide y se siguen probando
+  con CPython.
+
+### Paso 4 — Partitura como en el libro: gran pentagrama
+
+A pedido del usuario, `partitura.js` se reescribió para dibujar un **gran
+pentagrama** (clave de sol arriba, fa abajo, unidas por llave), repartiendo
+cada nota a su clave según la altura (corte en Do central, MIDI 60). Donde un
+pentagrama no recibe nota se coloca una **nota fantasma invisible** (`GhostNote`)
+para mantener alineadas las dos voces sin mostrar silencios. Esto elimina las
+líneas adicionales de los armónicos agudos y los subarmónicos graves. Las
+figuras pasaron a **redondas** y se rotula el **cifrado** encima de los acordes
+(`ChordSymbol`).
+
+### Paso 5 — Sincronizar el teclado con el audio
+
+El teclado mostraba todas las teclas del ejemplo encendidas desde el inicio. Se
+cambió a: **en reposo el teclado está limpio**, y al reproducir se enciende **al
+ritmo del sonido**, acorde por acorde (o nota por nota en arpegios), apagando lo
+anterior, y se limpia al terminar.
+
+Respetando la arquitectura, el *timing* lo decide Python: `sintesis.py` añadió
+`linea_de_tiempo(eventos, modo)`, que devuelve los segmentos `{t, midis}` y
+refleja exactamente el timing de la síntesis (comparten la constante
+`RETARDO_ARPEGIO`). El puente reproduce esa cronología guiándose por el **reloj
+del `AudioContext`** (con `requestAnimationFrame`, descontando la latencia de
+salida), no por temporizadores, que se desajustan. También se bloquea la
+navegación mientras suena, para no saltar de ejemplo a media reproducción.
+
+### Paso 6 — Verificación (y peleas con el entorno)
+
+- **Motor Python en CPython** (convención del repo): `plan_de_eventos`,
+  `secuencia`/`progresion`/`acorde_bloque` (dtype `float32`, longitud = Σ
+  duraciones × 44100, pico 0.8) y `linea_de_tiempo` en los cuatro modos.
+- **Render en navegador real** (Chrome headless + VexFlow del CDN, con un plan
+  sintético, sin Pyodide): el gran pentagrama dibuja dos claves, reparte las
+  notas, rotula los cifrados y no lanza — verificando `GhostNote`,
+  `StaveConnector` (llave), `ChordSymbol`, redondas y el formateo de dos voces.
+- **Lecciones del sandbox** (para la próxima vez): `loadPackage("numpy")` de
+  Pyodide vuelve a fallar dentro del Chrome del sandbox (el wheel responde 200
+  por `curl`; es restricción de red del entorno, no del código), así que el
+  camino de audio completo se prueba en el navegador del usuario. Además:
+  Chrome headless se cae si se agota `/dev/shm` → usar `--disable-dev-shm-usage`;
+  y un `pkill -f google-chrome` **mata el propio shell** porque su línea de
+  comando contiene "google-chrome" (usar `pkill` por nombre de proceso, sin `-f`,
+  o no mezclarlo con el comando que lanza Chrome).
+
+### Estado al cierre
+
+- [x] Fase 2 — motor de capítulos desde JSON: visor con navegación, gran
+  pentagrama con cifrado y piano sincronizado con el audio. Capítulo 1
+  sonificado en Do.
+- Pendiente: transposición a las 12 tonalidades + selector (la estructura
+  letra+alteración de `teoria.py` ya está lista), tipo `voces` y más capítulos.
+
+---
+
 ## Sesión 1 — 11 de junio de 2026
 
 **Resultado:** Fase 1 completa y desplegada. El prototipo del acorde de Do

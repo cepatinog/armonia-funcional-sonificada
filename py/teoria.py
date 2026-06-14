@@ -15,6 +15,7 @@ Convenciones:
 - La octava cambia de número en Do (B3 → C4).
 """
 
+import json
 import re
 from dataclasses import dataclass
 
@@ -105,3 +106,29 @@ def plan_de_render(nombres):
         "midi": [nota_a_midi(n) for n in notas],
         "hz": [round(midi_a_hz(nota_a_midi(n)), 2) for n in notas],
     }
+
+
+def plan_de_eventos(eventos):
+    """Plan de render para un ejemplo con varios eventos (secuencia o progresión).
+
+    Acepta una lista de {"notas": [...]} o el string JSON equivalente (tal como
+    lo envía JavaScript). Es lo que consume la interfaz para pintar partituras de
+    más de un acorde. Devuelve:
+      - "pasos": un plan_de_render por evento (más "cifrado", el texto del
+        acorde a dibujar encima, vacío si el evento no lo trae), para la partitura.
+      - "midi_union": todos los MIDI del ejemplo, en orden de aparición y sin
+        repetir, para resaltar el piano y calcular su rango.
+    """
+    if isinstance(eventos, str):
+        eventos = json.loads(eventos)
+    pasos = []
+    for ev in eventos:
+        paso = plan_de_render(ev["notas"])
+        paso["cifrado"] = ev.get("cifrado", "")  # se dibuja encima del acorde
+        pasos.append(paso)
+    union = []
+    for paso in pasos:
+        for midi in paso["midi"]:
+            if midi not in union:
+                union.append(midi)
+    return {"pasos": pasos, "midi_union": union}

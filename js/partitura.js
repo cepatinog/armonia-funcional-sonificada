@@ -1,47 +1,111 @@
 /* partitura.js — wrapper de VexFlow.
  *
- * Recibe notas YA transpuestas y deletreadas por teoria.py (el "plan de
- * render") y las dibuja en un pentagrama SVG. Aquí no hay matemática
- * musical: VexFlow solo pinta lo que Python decidió.
+ * Dibuja los ejemplos en un GRAN PENTAGRAMA (clave de sol arriba, clave de fa
+ * abajo, unidas por una llave), como en el libro y en la escritura de piano.
+ * Cada nota va al pentagrama que le corresponde según su altura, de modo que se
+ * evitan las líneas adicionales en los registros extremos (armónicos agudos,
+ * subarmónicos graves). Las figuras son redondas y, si el evento trae cifrado,
+ * se rotula encima del acorde.
+ *
+ * Recibe los "pasos" de teoria.plan_de_eventos; aquí no hay matemática musical:
+ * VexFlow solo pinta lo que Python decidió.
  */
 
 "use strict";
 
 const Partitura = {
-  /* Dibuja un acorde en redonda dentro de `contenedor`.
+  ANCHO_NOTA: 70, // ancho aproximado reservado por redonda/acorde
+  MARGEN: 95, // espacio para clave y armadura
+  DIVISION_MIDI: 60, // Do central: notas >= 60 a la clave de sol, el resto a la de fa
+
+  // Posición vertical de los dos pentagramas y alto total del lienzo. Generoso
+  // para que quepan las líneas adicionales de los registros extremos.
+  Y_SOL: 50,
+  Y_FA: 140,
+  ALTO: 280,
+
+  /* Dibuja una secuencia de notas o acordes dentro de `contenedor`.
    *
-   * plan: objeto de teoria.plan_de_render —
-   *   { vexflow: ["c/4", "e/4", "g/4"], alteraciones: ["", "", ""], … }
-   * opciones.armadura: tonalidad de la armadura ("C" en la Fase 1).
+   * pasos: lista de planes de teoria.plan_de_eventos —
+   *   [{ vexflow: [...], alteraciones: [...], midi: [...], cifrado: "C" }, …]
+   * opciones.armadura: tonalidad de la armadura ("C" en esta fase).
    */
-  dibujarAcorde(contenedor, plan, opciones = {}) {
-    const { armadura = "C", ancho = 320, alto = 160 } = opciones;
+  dibujar(contenedor, pasos, opciones = {}) {
+    const { armadura = "C" } = opciones;
     const VF = Vex.Flow;
 
     contenedor.innerHTML = ""; // permitir redibujar sin acumular SVGs
 
+    const ancho = Math.max(360, this.MARGEN + pasos.length * this.ANCHO_NOTA);
     const renderer = new VF.Renderer(contenedor, VF.Renderer.Backends.SVG);
-    renderer.resize(ancho, alto);
-    const contexto = renderer.getContext();
+    renderer.resize(ancho, this.ALTO);
+    const ctx = renderer.getContext();
 
-    const pentagrama = new VF.Stave(10, 30, ancho - 20);
-    pentagrama.addClef("treble").addKeySignature(armadura);
-    pentagrama.setContext(contexto).draw();
+    // Los dos pentagramas, al mismo x.
+    const sol = new VF.Stave(10, this.Y_SOL, ancho - 20).addClef("treble").addKeySignature(armadura);
+    const fa = new VF.Stave(10, this.Y_FA, ancho - 20).addClef("bass").addKeySignature(armadura);
+    sol.setContext(ctx).draw();
+    fa.setContext(ctx).draw();
 
-    // Un solo StaveNote con varias claves = acorde en bloque.
-    const acorde = new VF.StaveNote({ keys: plan.vexflow, duration: "w" });
+    // Llave a la izquierda y líneas que conectan ambos pentagramas (inicio y fin).
+    new VF.StaveConnector(sol, fa).setType(VF.StaveConnector.type.BRACE).setContext(ctx).draw();
+    new VF.StaveConnector(sol, fa).setType(VF.StaveConnector.type.SINGLE_LEFT).setContext(ctx).draw();
+    new VF.StaveConnector(sol, fa).setType(VF.StaveConnector.type.SINGLE_RIGHT).setContext(ctx).draw();
 
-    // VexFlow no deduce alteraciones del nombre: se añaden una a una,
-    // tal como las entregó teoria.py.
-    plan.alteraciones.forEach((alteracion, i) => {
-      if (alteracion !== "") {
-        acorde.addModifier(new VF.Accidental(alteracion), i);
+    // Repartir cada paso entre los dos pentagramas; donde un pentagrama no tiene
+    // notas se coloca una nota fantasma (invisible) para mantener la alineación.
+    const notasSol = [];
+    const notasFa = [];
+    pasos.forEach((paso) => {
+      const idxSol = [];
+      const idxFa = [];
+      paso.midi.forEach((m, i) => (m >= this.DIVISION_MIDI ? idxSol : idxFa).push(i));
+
+      const notaSol = this._figura(VF, paso, idxSol, "treble");
+      const notaFa = this._figura(VF, paso, idxFa, "bass");
+      notasSol.push(notaSol);
+      notasFa.push(notaFa);
+
+      // Cifrado encima del acorde, en el pentagrama que tenga la nota (preferimos
+      // el de sol, que es donde suele quedar la voz superior del acorde).
+      if (paso.cifrado) {
+        const destino = idxSol.length ? notaSol : notaFa;
+        destino.addModifier(new VF.ChordSymbol().addText(paso.cifrado), 0);
       }
     });
 
-    const voz = new VF.Voice({ num_beats: 4, beat_value: 4 });
-    voz.addTickables([acorde]);
-    new VF.Formatter().joinVoices([voz]).format([voz], ancho - 120);
-    voz.draw(contexto, pentagrama);
+    const vozSol = new VF.Voice({ num_beats: 4, beat_value: 4 }).setMode(VF.Voice.Mode.SOFT);
+    const vozFa = new VF.Voice({ num_beats: 4, beat_value: 4 }).setMode(VF.Voice.Mode.SOFT);
+    vozSol.addTickables(notasSol);
+    vozFa.addTickables(notasFa);
+
+    // Formatear ambas voces juntas para que coincidan en el eje horizontal.
+    new VF.Formatter()
+      .joinVoices([vozSol])
+      .joinVoices([vozFa])
+      .format([vozSol, vozFa], ancho - this.MARGEN);
+    vozSol.draw(ctx, sol);
+    vozFa.draw(ctx, fa);
+  },
+
+  /* Una redonda con las notas de `indices`, o una nota fantasma (invisible) si
+   * ese pentagrama no recibe ninguna nota en este paso. */
+  _figura(VF, paso, indices, clave) {
+    if (indices.length === 0) {
+      return new VF.GhostNote({ duration: "w" });
+    }
+    const nota = new VF.StaveNote({
+      clef: clave,
+      keys: indices.map((i) => paso.vexflow[i]),
+      duration: "w",
+    });
+    // VexFlow no deduce alteraciones del nombre: se añaden una a una, tal como
+    // las entregó teoria.py (el índice es la posición dentro de ESTA figura).
+    indices.forEach((i, pos) => {
+      if (paso.alteraciones[i] !== "") {
+        nota.addModifier(new VF.Accidental(paso.alteraciones[i]), pos);
+      }
+    });
+    return nota;
   },
 };

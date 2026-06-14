@@ -127,6 +127,65 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* Encabezado del capítulo, sobre la tarjeta del visor. */
+.titulo-capitulo {
+  margin: 0 0 1rem;
+  text-align: center;
+  font-size: 1.05rem;
+  color: #6b6358;
+  letter-spacing: 0.02em;
+}
+
+/* Título del ejemplo + contador "n / total" en la misma línea. */
+.cabecera-ejemplo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.cabecera-ejemplo h2 {
+  margin: 0;
+}
+
+.contador {
+  flex: none;
+  color: #8a8478;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+/* Botones de reproducción: uno por cada modo del ejemplo. */
+.modos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 1rem 0 0.5rem;
+}
+
+/* Barra de navegación entre ejemplos. */
+.navegacion {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-borde);
+}
+
+/* Anterior / Siguiente con estilo secundario (contorno) para no competir
+   con los botones de reproducción. */
+.navegacion button {
+  background: transparent;
+  color: var(--color-acento);
+}
+
+.navegacion button:disabled {
+  background: transparent;
+  border-color: var(--color-borde);
+  color: #b8b2a6;
+}
+
 footer {
   text-align: center;
   padding: 1rem;
