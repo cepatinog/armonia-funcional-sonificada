@@ -16,14 +16,15 @@
 
 let EJEMPLOS = [];
 let indice = 0;
+let TONALIDAD = "C"; // tonalidad activa; los ejemplos se guardan en Do y se transponen
 
 // Qué función del Motor reproduce cada modo. Las secuencias y acumulaciones
 // suenan en el tiempo (tocarSecuencia); bloques y arpegios son progresiones.
 const TOCAR_POR_MODO = {
-  secuencial: (eventos, modo, alResaltar) => Motor.tocarSecuencia(eventos, modo, alResaltar),
-  acumulativo: (eventos, modo, alResaltar) => Motor.tocarSecuencia(eventos, modo, alResaltar),
-  bloque: (eventos, modo, alResaltar) => Motor.tocarProgresion(eventos, modo, alResaltar),
-  arpegio: (eventos, modo, alResaltar) => Motor.tocarProgresion(eventos, modo, alResaltar),
+  secuencial: (eventos, modo, alResaltar, ton) => Motor.tocarSecuencia(eventos, modo, alResaltar, ton),
+  acumulativo: (eventos, modo, alResaltar, ton) => Motor.tocarSecuencia(eventos, modo, alResaltar, ton),
+  bloque: (eventos, modo, alResaltar, ton) => Motor.tocarProgresion(eventos, modo, alResaltar, ton),
+  arpegio: (eventos, modo, alResaltar, ton) => Motor.tocarProgresion(eventos, modo, alResaltar, ton),
 };
 
 const ETIQUETA_MODO = {
@@ -77,6 +78,13 @@ async function iniciarApp() {
     mostrarEjemplo(indice + 1);
   });
 
+  // 4. Selector de tonalidad: al cambiar, repinta el ejemplo actual (partitura
+  //    con armadura nueva y piano re-rangeado); la reproducción usa TONALIDAD.
+  document.getElementById("selector-tonalidad").addEventListener("change", (e) => {
+    TONALIDAD = e.target.value;
+    mostrarEjemplo(indice);
+  });
+
   mostrarEjemplo(0);
 }
 
@@ -90,9 +98,10 @@ function mostrarEjemplo(i) {
   document.getElementById("contador-ejemplo").textContent =
     `${indice + 1} / ${EJEMPLOS.length}`;
 
-  // Una sola llamada a Python alimenta partitura y piano.
-  const plan = Motor.planDeEventos(ejemplo.eventos);
-  Partitura.dibujar(document.getElementById("partitura"), plan.pasos, { armadura: "C" });
+  // Una sola llamada a Python alimenta partitura y piano, ya en la tonalidad
+  // activa (notas transpuestas + armadura destino).
+  const plan = Motor.planDeEventos(ejemplo.eventos, TONALIDAD);
+  Partitura.dibujar(document.getElementById("partitura"), plan.pasos, { armadura: TONALIDAD });
   dibujarPiano(plan.midi_union);
 
   construirBotonesModo(ejemplo);
@@ -122,7 +131,7 @@ function construirBotonesModo(ejemplo) {
     boton.addEventListener("click", async () => {
       bloquearControles(true); // evitar reproducciones encimadas y navegar a media reproducción
       try {
-        await TOCAR_POR_MODO[modo](ejemplo.eventos, modo, (midis) => Piano.resaltar(midis));
+        await TOCAR_POR_MODO[modo](ejemplo.eventos, modo, (midis) => Piano.resaltar(midis), TONALIDAD);
       } finally {
         bloquearControles(false);
       }
@@ -137,6 +146,7 @@ function bloquearControles(bloqueado) {
   for (const boton of document.querySelectorAll("#modos .boton-modo")) {
     boton.disabled = bloqueado;
   }
+  document.getElementById("selector-tonalidad").disabled = bloqueado;
   if (bloqueado) {
     document.getElementById("boton-anterior").disabled = true;
     document.getElementById("boton-siguiente").disabled = true;

@@ -57,20 +57,22 @@ const Motor = {
     return plan;
   },
 
-  /* Plan para un ejemplo de varios eventos (secuencia o progresión):
+  /* Plan para un ejemplo de varios eventos (secuencia o progresión), ya
+   * transpuesto a `tonalidad` (los ejemplos se guardan en Do):
    * { pasos: [ {vexflow, alteraciones, midi, hz}, … ], midi_union: [..] }.
    * Los eventos viajan a Python como string JSON. */
-  planDeEventos(eventos) {
-    const proxy = this.teoria.plan_de_eventos(JSON.stringify(eventos));
+  planDeEventos(eventos, tonalidad = "C") {
+    const proxy = this.teoria.plan_de_eventos(JSON.stringify(eventos), tonalidad);
     const plan = proxy.toJs({ dict_converter: Object.fromEntries });
     proxy.destroy();
     return plan;
   },
 
-  /* Cronología de resaltado del piano para un ejemplo+modo (de sintesis.py):
+  /* Cronología de resaltado del piano para un ejemplo+modo (de sintesis.py),
+   * transpuesta a `tonalidad`:
    * { segmentos: [ {t: seg, midis: [..]}, .. ], total: seg }. */
-  lineaDeTiempo(eventos, modo) {
-    const proxy = this.sintesis.linea_de_tiempo(JSON.stringify(eventos), modo);
+  lineaDeTiempo(eventos, modo, tonalidad = "C") {
+    const proxy = this.sintesis.linea_de_tiempo(JSON.stringify(eventos), modo, tonalidad);
     const linea = proxy.toJs({ dict_converter: Object.fromEntries });
     proxy.destroy();
     return linea;
@@ -141,27 +143,28 @@ const Motor = {
     requestAnimationFrame(paso);
   },
 
-  /* Sintetiza un acorde en bloque en Python y lo reproduce. */
-  async tocarAcorde(notas, dur = 2.0) {
+  /* Sintetiza un acorde en bloque en Python (transpuesto a `tonalidad`) y lo
+   * reproduce. */
+  async tocarAcorde(notas, dur = 2.0, tonalidad = "C") {
     await this._asegurarAudio();
-    return this.reproducir(this._extraerMuestras(this.sintesis.acorde_bloque(notas, dur)));
+    return this.reproducir(this._extraerMuestras(this.sintesis.acorde_bloque(notas, dur, tonalidad)));
   },
 
-  /* Reproduce una secuencia ("secuencial" o "acumulativo"). Si se da
-   * `alResaltar`, sincroniza el teclado con el audio. */
-  async tocarSecuencia(eventos, modo = "secuencial", alResaltar = null) {
+  /* Reproduce una secuencia ("secuencial" o "acumulativo") en `tonalidad`. Si
+   * se da `alResaltar`, sincroniza el teclado con el audio. */
+  async tocarSecuencia(eventos, modo = "secuencial", alResaltar = null, tonalidad = "C") {
     await this._asegurarAudio();
-    const muestras = this._extraerMuestras(this.sintesis.secuencia(JSON.stringify(eventos), modo));
-    const linea = alResaltar ? this.lineaDeTiempo(eventos, modo) : null;
+    const muestras = this._extraerMuestras(this.sintesis.secuencia(JSON.stringify(eventos), modo, tonalidad));
+    const linea = alResaltar ? this.lineaDeTiempo(eventos, modo, tonalidad) : null;
     return this.reproducir(muestras, linea, alResaltar);
   },
 
-  /* Reproduce una progresión de acordes ("bloque" o "arpegio"). Si se da
-   * `alResaltar`, sincroniza el teclado con el audio. */
-  async tocarProgresion(eventos, modo = "bloque", alResaltar = null) {
+  /* Reproduce una progresión de acordes ("bloque" o "arpegio") en `tonalidad`.
+   * Si se da `alResaltar`, sincroniza el teclado con el audio. */
+  async tocarProgresion(eventos, modo = "bloque", alResaltar = null, tonalidad = "C") {
     await this._asegurarAudio();
-    const muestras = this._extraerMuestras(this.sintesis.progresion(JSON.stringify(eventos), modo));
-    const linea = alResaltar ? this.lineaDeTiempo(eventos, modo) : null;
+    const muestras = this._extraerMuestras(this.sintesis.progresion(JSON.stringify(eventos), modo, tonalidad));
+    const linea = alResaltar ? this.lineaDeTiempo(eventos, modo, tonalidad) : null;
     return this.reproducir(muestras, linea, alResaltar);
   },
 };

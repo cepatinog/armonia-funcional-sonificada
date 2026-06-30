@@ -39,6 +39,27 @@
       </div>
       <p id="descripcion-ejemplo"></p>
 
+      <!-- Selector de tonalidad: los ejemplos se guardan en Do y se transponen
+           en runtime. El value es el nombre de tonalidad que entienden teoria.py
+           y VexFlow (la armadura); la etiqueta visible es bilingüe. -->
+      <div class="controles">
+        <label for="selector-tonalidad">Tonalidad</label>
+        <select id="selector-tonalidad">
+          <option value="C">Do (C)</option>
+          <option value="Db">Re♭ (Db)</option>
+          <option value="D">Re (D)</option>
+          <option value="Eb">Mi♭ (Eb)</option>
+          <option value="E">Mi (E)</option>
+          <option value="F">Fa (F)</option>
+          <option value="F#">Fa♯ (F#)</option>
+          <option value="G">Sol (G)</option>
+          <option value="Ab">La♭ (Ab)</option>
+          <option value="A">La (A)</option>
+          <option value="Bb">Si♭ (Bb)</option>
+          <option value="B">Si (B)</option>
+        </select>
+      </div>
+
       <div id="partitura" class="partitura"></div>
       <div id="piano" class="piano"></div>
 
@@ -52,7 +73,7 @@
   </main>
 
   <footer>
-    <p>Fase 2 · El sonido se genera con Python (NumPy) en tu navegador vía Pyodide.</p>
+    <p>El sonido se genera con Python (NumPy) en tu navegador vía Pyodide · transposición por intervalo a las 12 tonalidades.</p>
   </footer>
 </body>
 </html>

@@ -10,8 +10,6 @@ copiarse a un AudioBuffer de Web Audio. Se puede probar con CPython local:
     python3 -c "import sintesis; s = sintesis.acorde_bloque(['C4','E4','G4'], 2.0); print(s.dtype, len(s), abs(s).max())"
 """
 
-import json
-
 import numpy as np
 
 import teoria
@@ -115,23 +113,18 @@ def _arpegio(nombres, dur, retardo=RETARDO_ARPEGIO):
     return segmento
 
 
-def _parsear_eventos(eventos):
-    """Admite una lista de dicts o un string JSON (como lo manda JavaScript)."""
-    if isinstance(eventos, str):
-        eventos = json.loads(eventos)
-    return eventos
-
-
-def acorde_bloque(nombres, dur=2.0):
+def acorde_bloque(nombres, dur=2.0, tonalidad="C"):
     """Un acorde en bloque: todas las notas suenan a la vez durante `dur` segundos.
 
-    Recibe nombres de nota ("C4", "E4", "G4"), suma sus tonos, aplica la
-    envolvente y normaliza. Devuelve float32 listo para Web Audio.
+    Recibe nombres de nota ("C4", "E4", "G4"), los transpone a `tonalidad`
+    (los ejemplos se guardan en Do), suma sus tonos, aplica la envolvente y
+    normaliza. Devuelve float32 listo para Web Audio.
     """
+    nombres = teoria.transponer_nombres(nombres, tonalidad)
     return normalizar(_voz(nombres, dur)).astype(np.float32)
 
 
-def secuencia(eventos, modo="secuencial"):
+def secuencia(eventos, modo="secuencial", tonalidad="C"):
     """Notas (o acordes) que se escuchan en el tiempo, no a la vez.
 
     `eventos` es una lista (o string JSON) de {"notas": [...], "dur": s}:
@@ -140,9 +133,10 @@ def secuencia(eventos, modo="secuencial"):
     - "acumulativo": cada tramo suena con TODAS las notas introducidas hasta
       ese punto, de modo que la columna se va apilando.
 
-    Devuelve float32 normalizado y listo para Web Audio.
+    Las notas se transponen a `tonalidad` antes de sintetizar (los ejemplos se
+    guardan en Do). Devuelve float32 normalizado y listo para Web Audio.
     """
-    eventos = _parsear_eventos(eventos)
+    eventos = teoria.transponer_eventos(eventos, tonalidad)
     if modo == "acumulativo":
         tramos = []
         acumuladas = []
@@ -154,16 +148,17 @@ def secuencia(eventos, modo="secuencial"):
     return normalizar(np.concatenate(tramos)).astype(np.float32)
 
 
-def progresion(eventos, modo="bloque"):
+def progresion(eventos, modo="bloque", tonalidad="C"):
     """Una sucesión de acordes, uno tras otro.
 
     `eventos` es una lista (o string JSON) de {"notas": [...], "dur": s}:
     - "bloque": cada acorde suena con todas sus notas juntas.
     - "arpegio": cada acorde se "rompe", sus notas entran escalonadas.
 
-    Devuelve float32 normalizado y listo para Web Audio.
+    Las notas se transponen a `tonalidad` antes de sintetizar (los ejemplos se
+    guardan en Do). Devuelve float32 normalizado y listo para Web Audio.
     """
-    eventos = _parsear_eventos(eventos)
+    eventos = teoria.transponer_eventos(eventos, tonalidad)
     if modo == "arpegio":
         tramos = [_arpegio(ev["notas"], ev["dur"]) for ev in eventos]
     else:  # "bloque"
@@ -176,12 +171,14 @@ def _midis(nombres):
     return [teoria.nota_a_midi(teoria.parsear_nota(n)) for n in nombres]
 
 
-def linea_de_tiempo(eventos, modo):
+def linea_de_tiempo(eventos, modo, tonalidad="C"):
     """Cronología del resaltado del piano, sincronizada con el audio.
 
     Describe QUÉ teclas (MIDI) están encendidas y DESDE QUÉ instante, reflejando
     exactamente el timing de secuencia()/progresion()/_arpegio(). JavaScript la
-    usa para encender el teclado al mismo tiempo que suena cada cosa. Devuelve:
+    usa para encender el teclado al mismo tiempo que suena cada cosa. Las notas
+    se transponen a `tonalidad` para que las teclas resaltadas coincidan con el
+    audio. Devuelve:
 
         { "segmentos": [ {"t": inicio_en_seg, "midis": [..]}, .. ], "total": seg }
 
@@ -192,7 +189,7 @@ def linea_de_tiempo(eventos, modo):
     - "arpegio": dentro de cada acorde, un segmento por nota que se va sumando
       (las notas sostienen hasta el fin del acorde), separadas por RETARDO_ARPEGIO.
     """
-    eventos = _parsear_eventos(eventos)
+    eventos = teoria.transponer_eventos(eventos, tonalidad)
     segmentos = []
     t = 0.0
     for ev in eventos:

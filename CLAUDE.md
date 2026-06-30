@@ -128,8 +128,14 @@ en `referencias/` no se versionan ni se publican (.gitignore).
 - [x] Fase 2: motor de capítulos desde JSON — visor con navegación, gran
   pentagrama con cifrado y piano sincronizado con el audio (capítulo 1
   sonificado en Do; modos secuencial/acumulativo/bloque/arpegio).
-- [ ] Transposición a las 12 tonalidades con deletreo enarmónico + selector
-  (la estructura letra+alteración de `teoria.py` ya está lista).
+- [x] Transposición a las 12 tonalidades con deletreo enarmónico + selector.
+  `teoria.py` transpone POR INTERVALO (notas y cifrado); el motor recibe
+  `tonalidad` (`plan_de_eventos`, `secuencia`, `progresion`, `acorde_bloque`,
+  `linea_de_tiempo`). Decisiones: **registro cercano** (máx. ±6 semitonos, para
+  mantener el ejemplo en la misma octava en las 12 tonalidades) y **alteraciones
+  de imprenta** (`alteracion_visible` dibuja la alteración solo cuando difiere de
+  la armadura, con becuadros donde haga falta). La partitura usa la armadura de
+  la tonalidad destino.
 - [ ] Fase 3: refinamiento sonoro (timbres, voces separadas)
 - [ ] Fase 4: navegación completa por capítulos + más capítulos
 (Actualizar esta lista al completar cada fase.)

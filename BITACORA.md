@@ -6,6 +6,94 @@ reciente va primero.
 
 ---
 
+## Sesión 3 — 30 de junio de 2026
+
+**Resultado:** transposición a las 12 tonalidades mayores con deletreo
+enarmónico correcto y selector en la interfaz. Los ejemplos se siguen guardando
+en Do (como en el libro) y se transponen en runtime; el cambio de tonalidad
+re-renderiza partitura (con su armadura) y piano, y la reproducción suena en la
+tonalidad elegida. Era el *requisito de primera clase* pendiente desde la Fase 1.
+
+(Sesión retomada con Opus 4.8: primero se releyó `CLAUDE.md`, la bitácora y todo
+el código para reconstruir el estado exacto antes de proponer el plan.)
+
+### Paso 1 — Dos decisiones musicales antes de codificar
+
+Se consultó al usuario (experto musical) sobre dos puntos donde había criterio:
+
+- **Registro: cercano.** Transponer por el intervalo más próximo (máx. ±6
+  semitonos): si subir pasa del tritono, se baja una octava. Así Sol baja una 4ª
+  en vez de subir una 5ª, Si baja un semitono, etc., y el ejemplo se mantiene en
+  el mismo registro en las 12 tonalidades (comparación visual/auditiva justa).
+  El deletreo (letra+alteración) es idéntico en cualquier octava, así que esto
+  solo afecta la altura.
+- **Alteraciones: de imprenta.** Dibujar la alteración solo cuando difiere de lo
+  que la armadura ya provee, con becuadro donde la armadura altera una letra pero
+  la nota es natural. No es solo estética: hace emerger el deletreo correcto.
+
+### Paso 2 — El motor de transposición en `teoria.py`
+
+Respetando la decisión firme de modelar `Nota(letra, alteracion, octava)` con
+los campos separados, la transposición es POR INTERVALO, nunca por semitonos a
+ciegas:
+
+- `INTERVALOS_TONALIDAD`: el intervalo de Do a cada tónica destino como
+  `(pasos_de_letra, semitonos)`. `_intervalo_cercano` aplica la regla de registro.
+- `transponer_nota`: mueve la letra por su índice diatónico (`octava*7 + índice`,
+  `divmod` para la octava nueva), fija el MIDI objetivo y deriva la alteración
+  como la diferencia con el MIDI natural de la letra nueva. Guarda defensiva si
+  la alteración se sale de ±2 (futuros capítulos con notas extremas).
+- `transponer_cifrado`: separa raíz (`[A-G]` + alteración) de la calidad (`m`,
+  `7`, `dim`…) con un regex; solo la raíz se transpone. `Bdim`→`C#dim` en Re.
+- `armadura_de` + `alteracion_visible`: a partir del orden de sostenidos/bemoles
+  y el conteo por tonalidad, deciden qué dibujar (`""`, `"n"` o el símbolo).
+- `plan_de_render`/`plan_de_eventos` reciben `tonalidad`; en Do el resultado es
+  idéntico al anterior (compatibles hacia atrás, Fases 1 y 2 intactas).
+
+`sintesis.py` (acorde/secuencia/progresión/línea de tiempo) recibe `tonalidad` y
+transpone las notas con `teoria.transponer_eventos` ANTES de sintetizar, de modo
+que audio, partitura y piano comparten altura y deletreo. Quedó sin uso el viejo
+`_parsear_eventos` (el parseo de JSON ahora vive en teoría) y se retiró.
+
+### Paso 3 — Puente y UI
+
+- `puente-audio.js`: `tonalidad` como último parámetro (por defecto `"C"`) en
+  `planDeEventos`, `lineaDeTiempo`, `tocarSecuencia`, `tocarProgresion`,
+  `tocarAcorde`. Sin lógica musical nueva en JS.
+- `app.js`: estado global `TONALIDAD`; el `<select>` repinta el ejemplo actual al
+  cambiar y se deshabilita (junto con navegación y modos) mientras suena.
+- `index.html`/`css`: selector de 12 tonalidades con `value` = nombre que entienden
+  teoría y VexFlow (la armadura), etiqueta bilingüe (`Re♭ (Db)`).
+- `partitura.js` y `piano.js` **no cambiaron**: VexFlow dibuja la alteración solo
+  cuando teoría la incluye (incluido `"n"` → becuadro); el deletreo lo decide Python.
+
+### Paso 4 — Verificación
+
+- **Motor en CPython** (convención del repo): C–E–G → E–G#–B en Mi (nunca
+  E–Ab–B); Cdim → F#dim como F#–A♮–C♮ en Fa#; Cm → Ab–Cb–Eb en La♭; G7 → C#7 con
+  E# correcto. **Barrido completo** de los 8 ejemplos × 12 tonalidades sin
+  excepción: alteraciones visibles dentro del vocabulario, MIDI transpuesto =
+  original + intervalo cercano, señal `float32` con pico 0.8 y longitud invariante.
+  El deletreo por intervalo produce dobles bemoles correctos donde toca (en Re♭ la
+  columna de subarmónicos da A𝄫 y B𝄫): es lo correcto, no un error.
+- **Render en navegador real** (Chrome headless + VexFlow + el `partitura.js`
+  real, con planes reales generados por teoría): ej07 en Fa# rotula las 7 triadas
+  `F#, G#m, A#m, B, C#, D#m, E#dim` (con E# bien deletreado), ej02 en Re♭ dibuja
+  sin lanzar pese a los dobles bemoles, y los becuadros de imprenta aparecen.
+  Truco de esta vez: para esquivar el timing del CDN en headless (que ya tumbó a
+  NumPy en sesiones previas), se descargó VexFlow a un archivo local y se cargó por
+  `file://` con `--dump-dom`; Chrome se mata por PID (no `pkill -f google-chrome`).
+- **Cadena de audio completa**: la confirma el usuario en su navegador (NumPy no
+  baja en el Chrome del sandbox; restricción de red del entorno, no del código).
+
+### Estado al cierre
+
+- [x] Transposición a las 12 tonalidades con deletreo enarmónico + selector.
+- Pendiente: Fase 3 (refinamiento sonoro, tipo `voces` para cantar/escuchar voces
+  por separado) y más capítulos.
+
+---
+
 ## Sesión 2 — 13 de junio de 2026
 
 **Resultado:** Fase 2 — capítulo 1 sonificado. La app pasó de un acorde
