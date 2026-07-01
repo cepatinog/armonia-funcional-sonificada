@@ -15,7 +15,8 @@
 
 const Partitura = {
   ANCHO_NOTA: 70, // ancho aproximado reservado por redonda/acorde
-  MARGEN: 95, // espacio para clave y armadura
+  MARGEN_DERECHO: 60, // aire a la derecha del último acorde (su cifrado, p. ej. "E#dim",
+                      // se extiende más allá de la cabeza; que no bese el borde)
   DIVISION_MIDI: 60, // Do central: notas >= 60 a la clave de sol, el resto a la de fa
 
   // Posición vertical de los dos pentagramas y alto total del lienzo. Generoso
@@ -36,7 +37,21 @@ const Partitura = {
 
     contenedor.innerHTML = ""; // permitir redibujar sin acumular SVGs
 
-    const ancho = Math.max(360, this.MARGEN + pasos.length * this.ANCHO_NOTA);
+    // Las notas empiezan después de la clave y la ARMADURA, cuyo ancho crece con
+    // el número de alteraciones (Do ocupa ~42 px; Fa#, con 6 sostenidos, ~118).
+    // Se mide ese inicio (getNoteStartX funciona antes de dibujar) para dimensionar
+    // el lienzo y el ancho de formateo a partir de él, en vez de un margen fijo que
+    // se quedaba corto en las tonalidades con armadura grande y desbordaba el último
+    // acorde fuera del pentagrama.
+    const inicioNotas = Math.max(
+      new VF.Stave(10, 0, 1000).addClef("treble").addKeySignature(armadura).getNoteStartX(),
+      new VF.Stave(10, 0, 1000).addClef("bass").addKeySignature(armadura).getNoteStartX()
+    );
+    const ancho = Math.max(360, inicioNotas + pasos.length * this.ANCHO_NOTA + this.MARGEN_DERECHO);
+    // Ancho real disponible para las notas: del inicio medido hasta el aire derecho.
+    // Cuando aplica el mínimo (ejemplos cortos), las notas se reparten para llenarlo.
+    const anchoNotas = ancho - inicioNotas - this.MARGEN_DERECHO;
+
     const renderer = new VF.Renderer(contenedor, VF.Renderer.Backends.SVG);
     renderer.resize(ancho, this.ALTO);
     const ctx = renderer.getContext();
@@ -79,11 +94,13 @@ const Partitura = {
     vozSol.addTickables(notasSol);
     vozFa.addTickables(notasFa);
 
-    // Formatear ambas voces juntas para que coincidan en el eje horizontal.
+    // Formatear ambas voces juntas para que coincidan en el eje horizontal,
+    // dentro del ancho real disponible para notas (sin invadir clave/armadura
+    // a la izquierda ni el borde a la derecha).
     new VF.Formatter()
       .joinVoices([vozSol])
       .joinVoices([vozFa])
-      .format([vozSol, vozFa], ancho - this.MARGEN);
+      .format([vozSol, vozFa], anchoNotas);
     vozSol.draw(ctx, sol);
     vozFa.draw(ctx, fa);
   },
