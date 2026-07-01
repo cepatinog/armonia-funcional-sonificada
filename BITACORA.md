@@ -86,6 +86,22 @@ que audio, partitura y piano comparten altura y deletreo. Quedó sin uso el viej
 - **Cadena de audio completa**: la confirma el usuario en su navegador (NumPy no
   baja en el Chrome del sandbox; restricción de red del entorno, no del código).
 
+### Paso 5 — Ajuste de layout: el ancho del pentagrama según la armadura
+
+Probando en el navegador apareció un desborde: en tonalidades con armadura grande
+(Fa#, 6 sostenidos) el último acorde se salía por la derecha del pentagrama. La
+causa: `partitura.js` formateaba las notas en un ancho fijo (`ancho - MARGEN`, con
+MARGEN=95 asumiendo un tamaño constante de clave + armadura), pero las notas
+empiezan mucho más a la derecha cuanto más ancha es la armadura (~42 px en Do,
+~118 px en Fa#), así que se justificaban en un ancho mayor al área real disponible.
+
+Se midió el inicio real de las notas con `getNoteStartX()` (que ya devuelve el
+valor correcto antes de dibujar) y se dimensionan el lienzo y el ancho de formateo
+a partir de esa medida, no de un margen fijo. Así cada acorde recibe el mismo
+espacio en las 12 tonalidades y el canvas solo crece para armaduras grandes.
+Verificado con render headless (8 ejemplos × {Do, Fa#, Si, Re♭}: ninguno desborda
+ni lanza) y con capturas de ej07 en Fa# y de la columna de 12 notas en Si.
+
 ### Estado al cierre
 
 - [x] Transposición a las 12 tonalidades con deletreo enarmónico + selector.
