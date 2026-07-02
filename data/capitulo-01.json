@@ -1,6 +1,7 @@
 {
   "capitulo": 1,
   "titulo": "La armonía tonal funcional",
+  "concepto": "El sistema tonal nace de la serie de armónicos: un solo sonido fundamental despliega quintas, terceras y una séptima menor que se vuelven la materia prima de la armonía. De ahí surgen la triada mayor, las tres funciones (tónica, subdominante y dominante) y, apilando terceras sobre la escala, las siete triadas diatónicas.",
   "ejemplos": [
     {
       "id": "cap01-ej01",
