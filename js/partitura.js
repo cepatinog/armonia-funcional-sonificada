@@ -116,11 +116,17 @@ const Partitura = {
       keys: indices.map((i) => paso.vexflow[i]),
       duration: "w",
     });
+    const colores = paso.colores || []; // "" (negro) si el evento no trae colores
     // VexFlow no deduce alteraciones del nombre: se añaden una a una, tal como
     // las entregó teoria.py (el índice es la posición dentro de ESTA figura).
     indices.forEach((i, pos) => {
       if (paso.alteraciones[i] !== "") {
         nota.addModifier(new VF.Accidental(paso.alteraciones[i]), pos);
+      }
+      // Color de cabeza de nota, como el autor colorea sus ejemplos (teoria.py
+      // decide el color; aquí solo se pinta). setKeyStyle usa la posición.
+      if (colores[i]) {
+        nota.setKeyStyle(pos, { fillStyle: colores[i], strokeStyle: colores[i] });
       }
     });
     return nota;

@@ -37,6 +37,38 @@ SEMITONOS_A_ALTERACION = {v: k for k, v in ALTERACION_A_SEMITONOS.items()}
 MIDI_LA4 = 69
 HZ_LA4 = 440.0
 
+# Colores con que el autor del libro resalta ciertas notas en sus ejemplos.
+# Cada color marca el grado de la escala que DEFINE una función tonal, así que
+# el JSON usa nombres semánticos (no hex) y esta es la única fuente de verdad de
+# los tonos, medidos de las propias láminas del libro. Como el coloreado es
+# POSICIONAL (va atado al índice de la nota dentro del evento) y la transposición
+# conserva el orden, el color viaja correctamente a las 12 tonalidades: la nota
+# verde sigue siendo la 3ª de la escala en cualquier tono.
+COLORES = {
+    "verde": "#26d621",    # 3ª de la escala → función tónica
+    "naranja": "#e8972b",  # 4ª de la escala → función subdominante
+    "rojo": "#d83818",     # 7ª (sensible) → función dominante
+}
+
+
+def _resolver_colores(nombres_color, n):
+    """Resuelve una lista de nombres de color a hex, alineada a `n` notas.
+
+    Nombre vacío o lista más corta que las notas → "" (sin color, negro), de
+    modo que un evento sin `colores` (los capítulos anteriores) sigue en negro.
+    Un nombre fuera de la paleta es un error (delata una errata en el JSON).
+    """
+    nombres_color = list(nombres_color) + [""] * (n - len(nombres_color))
+    resueltos = []
+    for c in nombres_color[:n]:
+        if not c:
+            resueltos.append("")
+        elif c in COLORES:
+            resueltos.append(COLORES[c])
+        else:
+            raise ValueError(f"Color desconocido: {c!r} (usa {list(COLORES)})")
+    return resueltos
+
 # Nombre como "Bb3": letra, alteración opcional, octava (admite negativas).
 _PATRON_NOTA = re.compile(r"^([A-G])(##|#|bb|b)?(-?\d+)$")
 
@@ -124,7 +156,9 @@ def plan_de_eventos(eventos, tonalidad="C"):
     se ve. Es lo que consume la interfaz para pintar partituras de más de un
     acorde. Devuelve:
       - "pasos": un plan_de_render por evento (más "cifrado", el texto del
-        acorde a dibujar encima, vacío si el evento no lo trae), para la partitura.
+        acorde a dibujar encima, vacío si el evento no lo trae; y "colores",
+        lista paralela con el color hex de cada nota o "" si va en negro), para
+        la partitura.
       - "midi_union": todos los MIDI del ejemplo, en orden de aparición y sin
         repetir, para resaltar el piano y calcular su rango.
     """
@@ -136,6 +170,8 @@ def plan_de_eventos(eventos, tonalidad="C"):
         paso = plan_de_render(notas, tonalidad)
         # El cifrado también se transpone: la raíz cambia, la calidad se conserva.
         paso["cifrado"] = transponer_cifrado(ev.get("cifrado", ""), tonalidad)
+        # Colores del autor (hex), alineados con vexflow/alteraciones/midi.
+        paso["colores"] = _resolver_colores(ev.get("colores", []), len(notas))
         pasos.append(paso)
     union = []
     for paso in pasos:
