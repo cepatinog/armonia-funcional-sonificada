@@ -6,6 +6,92 @@ reciente va primero.
 
 ---
 
+## Sesión 4 — 1 de julio de 2026
+
+**Resultado:** la app dejó de ser de un solo capítulo. Ahora es una SPA estática de
+dos vistas (portada con **página índice** de capítulos + visor), enrutada por el hash
+de la URL. Se añadió un **texto de concepto por capítulo**, se reprodujo el
+**coloreado de notas del autor** (verde/naranja/rojo según el grado que define cada
+función) y se **sonificó el capítulo 2** ("Funciones de la armonía tonal funcional").
+
+(Sesión retomada con Opus 4.8: primero se releyó `CLAUDE.md`, la bitácora y todo el
+código para reconstruir el estado antes de planear.)
+
+### Paso 0 — Revisión y nuevos requisitos del usuario
+
+Se revisó todo: Fases 1–2 + transposición estaban completas y sin deuda técnica; el
+único bloqueo estructural era que `app.js` cargaba un capítulo hardcodeado pese a que
+`CLAUDE.md` promete "navegación por capítulos". Decidido avanzar por contenido. Durante
+el planteo el usuario fijó tres reglas que rigen de aquí en adelante:
+
+1. **Fuente = imágenes literales del libro** en `referencias/capN/` (gitignored): se
+   transcriben los ejemplos a JSON; la prosa se sigue parafraseando.
+2. **Texto de concepto en pantalla**, en dos niveles: idea del capítulo + texto por
+   ejemplo (el `descripcion` que ya existía).
+3. **Notas coloreadas** como el autor. UX de navegación elegida: **página índice**.
+
+### Paso 1 — Leer los colores del autor de las imágenes
+
+Sin PIL/ImageMagick en el entorno se instaló Pillow para muestrear los píxeles de
+`referencias/cap2/*.jpg`. El primer barrido confundía naranja oscuro con rojo (los
+bordes del naranja se oscurecen), así que se aisló el núcleo más saturado de cada
+cabeza y, en G7/Bm♭5 (dos notas coloreadas juntas), se separaron por altura. Colores
+del autor: **verde `#26d621` = 3ª** (tónica), **naranja `#e8972b` = 4ª**
+(subdominante), **rojo `#d83818` = 7ª** (dominante). Las dominantes llevan 4ª+7ª. La
+lámina de progresión/retrogresión va en negro.
+
+### Paso 2 — Shell de navegación (commit 1)
+
+`index.html` pasó a albergar dos secciones (`#indice` y `#visor`) que se alternan por
+`location.hash` (`""`/`#indice` → portada, `#cap-NN` → capítulo); se escucha
+`hashchange`, así que el back/forward del navegador funciona. `data/indice.json` es el
+manifiesto (título, autor, 12 capítulos con flag `disponible`). Detalle de arquitectura
+que condicionó el diseño: la partitura y el piano dependen de `plan_de_eventos` (que
+corre en Python), así que **el motor arranca UNA vez de fondo** (promesa única) mientras
+se ve el índice, y la vista de capítulo hace `await` de esa promesa antes de renderizar.
+`TONALIDAD` se conserva entre capítulos.
+
+### Paso 3 — Concepto y colores (commits 2 y 3)
+
+- El JSON de capítulo ganó `concepto` (bloque parafraseado sobre los ejemplos); se le
+  añadió a `capitulo-01.json`.
+- `teoria.py` ganó la paleta `COLORES` (única fuente de verdad de los tonos) y
+  `plan_de_eventos` adjunta `colores` (hex) paralelo a `vexflow`/`midi`. Como el color
+  es **posicional** y `transponer_eventos` conserva el orden y los campos (`{**ev,…}`),
+  el color viaja a las 12 tonalidades **sin lógica nueva**: la nota verde sigue siendo
+  la 3ª (en Fa# cae en A#, en Mi en G#). `partitura.js` colorea la cabeza con
+  `setKeyStyle`; sin color → negro (los capítulos anteriores no cambian).
+
+### Paso 4 — Capítulo 2 (commit 4)
+
+Transcrito de `referencias/cap2/`: ej01 "Los acordes de cada función" (las 7 triadas
+diatónicas por función, coloreadas), ej02 "Progresión (T–S–D–T)" C–F–G–C y ej03
+"Retrogresión (T–D–S–T)" C–G–F–C. No hizo falta tocar el motor (reusa `progresion`).
+Se activó su tarjeta en el manifiesto. **Errata cazada en verificación:** faltaba `dur`
+en los eventos (obligatorio para la síntesis) → añadido.
+
+### Paso 5 — Verificación
+
+- **Motor en CPython + NumPy** (convención del repo): los 3 ejemplos × {C, E, F#, Db,
+  Ab} sin excepción; `colores` alineados con `vexflow`/`midi` y siguiendo al grado tras
+  transponer; señal `float32` con pico 0.8 y `linea_de_tiempo` no vacía; el cifrado
+  `Bm(b5)` transpone con deletreo correcto (**E#m(b5) en Fa#**, Cm(b5) en Re♭).
+- **Chrome headless** (trucos de la sesión 3: VexFlow local, `--disable-dev-shm-usage`,
+  matar por PID): (a) navegación con stubs — el índice pinta las 12 tarjetas y el hash
+  alterna vistas (`#cap-01` carga el capítulo); (b) render con el `partitura.js` real y
+  planes reales — los 3 ejemplos del cap. 2 dibujan sin lanzar en Do y Fa#, con las
+  cabezas coloreadas presentes en el SVG (verde 6 notas, naranja 8, rojo 4).
+- **Cadena de audio completa**: la confirma el usuario en su navegador (NumPy no baja en
+  el Chrome del sandbox; restricción de red del entorno, no del código).
+
+### Estado al cierre
+
+- [x] Navegación por capítulos (base de la Fase 4), texto de concepto y notas coloreadas.
+- [x] Capítulo 2 sonificado.
+- Pendiente: Fase 3 (timbres, tipo `voces`) y más capítulos (3+).
+
+---
+
 ## Sesión 3 — 30 de junio de 2026
 
 **Resultado:** transposición a las 12 tonalidades mayores con deletreo

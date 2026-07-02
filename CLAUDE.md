@@ -49,12 +49,17 @@ y MOSTRAR cualquier ejemplo en las 12 tonalidades:
 
 ## Modelo de datos
 
+`data/indice.json` es el **manifiesto del libro**: título, autor y la lista de
+capítulos (`{numero, titulo, archivo, disponible}`). La portada (vista índice)
+pinta una tarjeta por capítulo; solo los `disponible: true` son navegables.
+
 Cada capítulo es un archivo `data/capitulo-XX.json` con una lista de ejemplos:
 
 ```json
 {
   "capitulo": 1,
   "titulo": "La armonía tonal funcional",
+  "concepto": "Idea general del capítulo (paráfrasis; se muestra sobre los ejemplos)",
   "ejemplos": [
     {
       "id": "cap01-ej01",
@@ -72,7 +77,8 @@ Cada capítulo es un archivo `data/capitulo-XX.json` con una lista de ejemplos:
       "titulo": "Triadas diatónicas de la escala mayor",
       "tipo": "progresion",
       "eventos": [
-        { "cifrado": "C",  "notas": ["C3", "E4", "G4", "C5"], "dur": 1.5 },
+        { "cifrado": "C",  "notas": ["C3", "E4", "G4", "C5"], "dur": 1.5,
+          "colores": ["", "verde", "", ""] },
         { "cifrado": "Dm", "notas": ["D3", "F4", "A4", "D5"], "dur": 1.5 }
       ],
       "modos": ["bloque", "arpegio"]
@@ -81,31 +87,55 @@ Cada capítulo es un archivo `data/capitulo-XX.json` con una lista de ejemplos:
 }
 ```
 
+Campos por evento: `notas` (siempre en Do; se transponen en runtime), `dur`
+(segundos, **obligatorio**), `cifrado` (opcional) y `colores` (opcional, lista
+**paralela** a `notas`). Cada capítulo puede traer `concepto` (idea general).
+
 Tipos previstos: "acorde", "progresion", "escala", "secuencia", "voces"
 (para cantar/escuchar voces por separado: el libro insiste en ello).
 El esquema puede crecer, pero todo cambio se documenta aquí.
 
+### Notas coloreadas
+El autor del libro resalta con color el grado que **define** cada función tonal.
+Se reproduce ese coloreado: `colores` usa nombres semánticos (`""`, `"verde"`,
+`"naranja"`, `"rojo"`) y `teoria.py` (`COLORES`) es la única fuente de verdad de
+los tonos (hex medidos de las láminas): verde = 3ª (tónica), naranja = 4ª
+(subdominante), rojo = 7ª (dominante). El color es **posicional** (va atado al
+índice de la nota en el evento) y la transposición conserva el orden, así que
+viaja a las 12 tonalidades sin lógica nueva (la nota verde sigue siendo la 3ª).
+`partitura.js` solo pinta la cabeza (`setKeyStyle`); sin color → negro.
+
 ## Estructura del repositorio
 
 ```
-index.html          ← navegación por capítulos, contenedor de la app
+index.html          ← dos vistas (índice + visor), contenedor de la app
 css/estilos.css
-js/app.js           ← carga JSON, construye tarjetas de ejemplos
-js/partitura.js     ← wrapper de VexFlow
+js/app.js           ← enrutado por hash, vista índice y vista capítulo
+js/partitura.js     ← wrapper de VexFlow (incluye color de cabezas)
 js/piano.js         ← teclado SVG
 js/puente-audio.js  ← init de Pyodide + Web Audio
 py/teoria.py
 py/sintesis.py
+data/indice.json    ← manifiesto de capítulos (portada)
 data/capitulo-XX.json
-referencias/        ← PDFs del libro (NO se publica: está en .gitignore)
+referencias/        ← PDFs e imágenes del libro (NO se publica: .gitignore)
 ```
+
+La navegación es una SPA estática enrutada por el **hash** de la URL
+(`""`/`#indice` → portada; `#cap-NN` → capítulo), sin build step y compatible
+con el subpath de GitHub Pages. El motor (Pyodide+NumPy) arranca UNA vez de
+fondo mientras se ve el índice; la vista de capítulo lo espera antes de
+renderizar (partitura y piano dependen de Python).
 
 ## Flujo de trabajo por capítulo
 
-1. El usuario indica qué PDF leer en `referencias/`.
-2. Claude lee el capítulo y propone el `capitulo-XX.json` con todos los
-   ejemplos musicales identificados, parafraseando las descripciones.
-3. El usuario revisa/ajusta el JSON (él es el experto musical).
+1. El usuario sube las **imágenes literales** de los ejemplos del libro a
+   `referencias/capN/` (fuente prioritaria a transcribir). El texto del capítulo
+   puede leerse de los PDFs de `referencias/`.
+2. Claude transcribe los ejemplos a `capitulo-XX.json` (notas, cifrado y
+   `colores` tal como los colorea el autor), parafrasea el `concepto` del
+   capítulo y las `descripcion` de cada ejemplo (nunca texto literal).
+3. El usuario revisa/ajusta el JSON, sobre todo los voicings (él es el experto).
 4. Si el capítulo introduce un tipo de ejemplo nuevo, se extiende el motor.
 
 ## Derechos de autor
@@ -136,6 +166,13 @@ en `referencias/` no se versionan ni se publican (.gitignore).
   de imprenta** (`alteracion_visible` dibuja la alteración solo cuando difiere de
   la armadura, con becuadros donde haga falta). La partitura usa la armadura de
   la tonalidad destino.
+- [x] Navegación por capítulos (Fase 4, base): SPA de dos vistas enrutada por
+  hash, portada con tarjetas desde `data/indice.json`, motor de fondo. Texto de
+  concepto por capítulo. **Notas coloreadas** como el autor (paleta en
+  `teoria.py`, color por cabeza en `partitura.js`).
+- [x] Capítulo 2 sonificado ("Funciones de la armonía tonal funcional"): las 7
+  triadas por función con color (verde 3ª / naranja 4ª / rojo 7ª) + progresión y
+  retrogresión. Transcrito de `referencias/cap2/`.
 - [ ] Fase 3: refinamiento sonoro (timbres, voces separadas)
-- [ ] Fase 4: navegación completa por capítulos + más capítulos
+- [ ] Fase 4: más capítulos (3+)
 (Actualizar esta lista al completar cada fase.)
