@@ -1,0 +1,18 @@
+{
+  "titulo": "Armonía Funcional – del clásico al jazz",
+  "autor": "Jaime Jaramillo Arias",
+  "capitulos": [
+    { "numero": 1, "titulo": "La armonía tonal funcional", "archivo": "capitulo-01.json", "disponible": true },
+    { "numero": 2, "titulo": "Funciones de la armonía tonal funcional", "archivo": "capitulo-02.json", "disponible": false },
+    { "numero": 3, "titulo": "Promoción o degradación de las notas", "disponible": false },
+    { "numero": 4, "titulo": "Inversiones de los acordes", "disponible": false },
+    { "numero": 5, "titulo": "Posición y disposición de los acordes", "disponible": false },
+    { "numero": 6, "titulo": "Grados de atracción melódica", "disponible": false },
+    { "numero": 7, "titulo": "Enlace de acordes", "disponible": false },
+    { "numero": 8, "titulo": "Cadencias", "disponible": false },
+    { "numero": 9, "titulo": "Armonización y rearmonización", "disponible": false },
+    { "numero": 10, "titulo": "Utilización de las inversiones", "disponible": false },
+    { "numero": 11, "titulo": "Duplicaciones y supresiones", "disponible": false },
+    { "numero": 12, "titulo": "Paralelismos no deseados", "disponible": false }
+  ]
+}

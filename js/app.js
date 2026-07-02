@@ -1,22 +1,25 @@
-/* app.js — orquestador de la Fase 2.
+/* app.js — orquestador de la app.
  *
- * Motor dirigido por datos: carga data/capitulo-01.json, muestra los ejemplos
- * de uno en uno (con navegación) y, por cada ejemplo, ofrece un botón por modo
- * de reproducción. Flujo por ejemplo:
+ * SPA estática de dos vistas, enrutada por el hash de la URL (sin build step,
+ * compatible con el subpath de GitHub Pages):
  *
- *   1. teoria.plan_de_eventos → partitura + teclas resaltadas (una sola llamada).
- *   2. Un botón por cada modo (secuencial, acumulativo, bloque, arpegio) que
- *      pide a sintesis.py el audio y lo reproduce.
+ *   ""/"#indice"  → ÍNDICE: portada con los capítulos del libro como tarjetas.
+ *   "#cap-NN"     → VISOR: un capítulo, con sus ejemplos de uno en uno.
  *
- * Toda la matemática musical y la síntesis viven en Python; aquí solo se arma
- * la interfaz y se conmuta entre ejemplos.
+ * El motor musical (Pyodide + NumPy + teoria/sintesis) se arranca UNA sola vez, de
+ * fondo, mientras el usuario mira el índice; la vista de capítulo espera esa promesa
+ * antes de renderizar, porque la partitura y el piano dependen de plan_de_eventos
+ * (que corre en Python). Toda la matemática musical y la síntesis viven en Python;
+ * aquí solo se arma la interfaz y se conmuta entre vistas.
  */
 
 "use strict";
 
-let EJEMPLOS = [];
-let indice = 0;
-let TONALIDAD = "C"; // tonalidad activa; los ejemplos se guardan en Do y se transponen
+let MANIFIESTO = null;   // data/indice.json (título del libro + lista de capítulos)
+let motorListo = null;   // promesa única del arranque del motor
+let EJEMPLOS = [];        // ejemplos del capítulo activo
+let indice = 0;           // índice del ejemplo mostrado
+let TONALIDAD = "C";      // tonalidad activa; se conserva entre capítulos
 
 // Qué función del Motor reproduce cada modo. Las secuencias y acumulaciones
 // suenan en el tiempo (tocarSecuencia); bloques y arpegios son progresiones.
@@ -37,53 +40,135 @@ const ETIQUETA_MODO = {
 async function iniciarApp() {
   const estado = document.getElementById("estado-motor");
 
-  // 1. Cargar los datos del capítulo.
-  let datos;
+  // 1. Cargar el manifiesto de capítulos.
   try {
-    const respuesta = await fetch("data/capitulo-01.json");
+    const respuesta = await fetch("data/indice.json");
     if (!respuesta.ok) throw new Error(`HTTP ${respuesta.status}`);
-    datos = await respuesta.json();
+    MANIFIESTO = await respuesta.json();
   } catch (error) {
     estado.textContent =
-      "No se pudo cargar data/capitulo-01.json. Sirve la app por http " +
+      "No se pudo cargar data/indice.json. Sirve la app por http " +
       "(python3 -m http.server). Detalle: " + error.message;
     estado.classList.add("error");
     console.error(error);
     return;
   }
-  EJEMPLOS = datos.ejemplos;
-  document.getElementById("titulo-capitulo").textContent =
-    `Capítulo ${datos.capitulo} · ${datos.titulo}`;
 
-  // 2. Arrancar el motor musical (Pyodide + NumPy + teoria/sintesis).
-  try {
-    await Motor.iniciar((mensaje) => {
-      estado.textContent = mensaje;
+  // 2. Arrancar el motor de fondo (sin await): se carga mientras se ve el índice.
+  motorListo = Motor.iniciar((mensaje) => { estado.textContent = mensaje; })
+    .then(() => estado.classList.add("oculto"))
+    .catch((error) => {
+      estado.textContent =
+        "No se pudo cargar el motor musical. Revisa tu conexión y que la app se " +
+        "sirva por http (no file://). Detalle: " + error.message;
+      estado.classList.remove("oculto");
+      estado.classList.add("error");
+      console.error(error);
+      throw error;
     });
-  } catch (error) {
-    estado.textContent =
-      "No se pudo cargar el motor musical. Revisa tu conexión y que la app se " +
-      "sirva por http (no file://). Detalle: " + error.message;
-    estado.classList.add("error");
-    console.error(error);
-    return;
-  }
-  estado.classList.add("oculto");
 
-  // 3. Navegación entre ejemplos.
+  // 3. Listeners globales.
+  window.addEventListener("hashchange", enrutar);
+  document.getElementById("boton-indice").addEventListener("click", () => {
+    location.hash = ""; // volver al índice
+  });
   document.getElementById("boton-anterior").addEventListener("click", () => {
     mostrarEjemplo(indice - 1);
   });
   document.getElementById("boton-siguiente").addEventListener("click", () => {
     mostrarEjemplo(indice + 1);
   });
-
-  // 4. Selector de tonalidad: al cambiar, repinta el ejemplo actual (partitura
-  //    con armadura nueva y piano re-rangeado); la reproducción usa TONALIDAD.
+  // Selector de tonalidad: al cambiar, repinta el ejemplo actual (partitura con
+  // armadura nueva y piano re-rangeado); la reproducción usa TONALIDAD.
   document.getElementById("selector-tonalidad").addEventListener("change", (e) => {
     TONALIDAD = e.target.value;
     mostrarEjemplo(indice);
   });
+
+  // 4. Resolver la ruta actual (permite entrar directo con #cap-NN).
+  enrutar();
+}
+
+/* Muestra la vista que corresponde al hash de la URL. */
+function enrutar() {
+  const coincidencia = location.hash.match(/^#cap-(\d+)/);
+  if (coincidencia) {
+    vistaCapitulo(parseInt(coincidencia[1], 10));
+  } else {
+    vistaIndice();
+  }
+}
+
+/* Alterna qué sección (índice / visor) está visible. */
+function mostrarVista(cual) {
+  document.getElementById("indice").classList.toggle("oculto", cual !== "indice");
+  document.getElementById("visor").classList.toggle("oculto", cual !== "visor");
+}
+
+/* VISTA ÍNDICE: portada con los capítulos del libro como tarjetas. Las
+ * disponibles enlazan a #cap-NN; el resto se muestra atenuado como hoja de ruta. */
+function vistaIndice() {
+  mostrarVista("indice");
+  document.getElementById("indice-titulo").textContent =
+    `${MANIFIESTO.titulo} · ${MANIFIESTO.autor}`;
+
+  const lista = document.getElementById("lista-capitulos");
+  lista.innerHTML = "";
+  for (const cap of MANIFIESTO.capitulos) {
+    const num = String(cap.numero).padStart(2, "0");
+    let tarjeta;
+    if (cap.disponible) {
+      tarjeta = document.createElement("a");
+      tarjeta.href = `#cap-${num}`;
+      tarjeta.className = "tarjeta-capitulo";
+    } else {
+      tarjeta = document.createElement("div");
+      tarjeta.className = "tarjeta-capitulo deshabilitada";
+    }
+    const etiqueta = cap.disponible ? "Escuchar →" : "Próximamente";
+    tarjeta.innerHTML =
+      `<span class="num-capitulo">Capítulo ${cap.numero}</span>` +
+      `<span class="titulo-tarjeta">${cap.titulo}</span>` +
+      `<span class="estado-tarjeta">${etiqueta}</span>`;
+    lista.appendChild(tarjeta);
+  }
+}
+
+/* VISTA CAPÍTULO: carga data/capitulo-NN.json y muestra sus ejemplos. */
+async function vistaCapitulo(numero) {
+  const cap = MANIFIESTO.capitulos.find((c) => c.numero === numero);
+  if (!cap || !cap.disponible) {
+    location.hash = ""; // capítulo inexistente o no disponible → índice
+    return;
+  }
+  mostrarVista("visor");
+
+  const estado = document.getElementById("estado-motor");
+  try {
+    await motorListo; // la partitura/piano necesitan Python; esperamos al motor
+  } catch {
+    return; // el error ya se mostró en el estado
+  }
+
+  let datos;
+  try {
+    const respuesta = await fetch(`data/${cap.archivo}`);
+    if (!respuesta.ok) throw new Error(`HTTP ${respuesta.status}`);
+    datos = await respuesta.json();
+  } catch (error) {
+    estado.textContent =
+      `No se pudo cargar data/${cap.archivo}. Detalle: ` + error.message;
+    estado.classList.remove("oculto");
+    estado.classList.add("error");
+    console.error(error);
+    return;
+  }
+
+  EJEMPLOS = datos.ejemplos;
+  document.getElementById("titulo-capitulo").textContent =
+    `Capítulo ${datos.capitulo} · ${datos.titulo}`;
+  // Idea general del capítulo (paráfrasis; puede faltar en capítulos antiguos).
+  document.getElementById("concepto-capitulo").textContent = datos.concepto || "";
 
   mostrarEjemplo(0);
 }
@@ -147,6 +232,7 @@ function bloquearControles(bloqueado) {
     boton.disabled = bloqueado;
   }
   document.getElementById("selector-tonalidad").disabled = bloqueado;
+  document.getElementById("boton-indice").disabled = bloqueado;
   if (bloqueado) {
     document.getElementById("boton-anterior").disabled = true;
     document.getElementById("boton-siguiente").disabled = true;

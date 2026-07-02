@@ -28,10 +28,25 @@
   </header>
 
   <main>
-    <p id="titulo-capitulo" class="titulo-capitulo"></p>
+    <!-- Estado del motor (Pyodide + NumPy): visible en ambas vistas mientras carga
+         de fondo. Con .error se vuelve un aviso; con .oculto desaparece. -->
+    <div id="estado-motor" class="estado-motor">Cargando motor musical…</div>
 
-    <section class="tarjeta" id="visor">
-      <div id="estado-motor" class="estado-motor">Cargando motor musical…</div>
+    <!-- Vista ÍNDICE: portada con los capítulos del libro como tarjetas. -->
+    <section class="tarjeta" id="indice">
+      <p id="indice-titulo" class="titulo-capitulo"></p>
+      <div id="lista-capitulos" class="indice"></div>
+    </section>
+
+    <!-- Vista VISOR: un capítulo, con sus ejemplos de uno en uno. -->
+    <section class="tarjeta oculto" id="visor">
+      <div class="cabecera-visor">
+        <button id="boton-indice" class="boton-secundario">← Índice</button>
+        <p id="titulo-capitulo" class="titulo-capitulo"></p>
+      </div>
+
+      <!-- Idea general del capítulo (paráfrasis del libro). Se rellena por JS. -->
+      <p id="concepto-capitulo" class="concepto"></p>
 
       <div class="cabecera-ejemplo">
         <h2 id="titulo-ejemplo"></h2>
