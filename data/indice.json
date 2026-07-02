@@ -3,7 +3,7 @@
   "autor": "Jaime Jaramillo Arias",
   "capitulos": [
     { "numero": 1, "titulo": "La armonía tonal funcional", "archivo": "capitulo-01.json", "disponible": true },
-    { "numero": 2, "titulo": "Funciones de la armonía tonal funcional", "archivo": "capitulo-02.json", "disponible": false },
+    { "numero": 2, "titulo": "Funciones de la armonía tonal funcional", "archivo": "capitulo-02.json", "disponible": true },
     { "numero": 3, "titulo": "Promoción o degradación de las notas", "disponible": false },
     { "numero": 4, "titulo": "Inversiones de los acordes", "disponible": false },
     { "numero": 5, "titulo": "Posición y disposición de los acordes", "disponible": false },

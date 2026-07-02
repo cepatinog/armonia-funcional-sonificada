@@ -1,0 +1,49 @@
+{
+  "capitulo": 2,
+  "titulo": "Funciones de la armonía tonal funcional",
+  "concepto": "Los acordes no son intercambiables: cada uno cumple una función tonal que rige su tensión y su dirección. Hay tres funciones: tónica (reposo), dominante (tensión) y subdominante (tránsito de una a otra). Como hay siete acordes diatónicos y solo tres funciones, cada función reúne varios acordes, reconocibles por el grado de la escala que contienen. Sobre esa lógica se arma una progresión, que va del reposo a la tensión y de vuelta al reposo.",
+  "ejemplos": [
+    {
+      "id": "cap02-ej01",
+      "titulo": "Los acordes de cada función",
+      "descripcion": "Las siete triadas diatónicas repartidas en las tres funciones. El color marca el grado que define cada una: verde la 3ª de la escala (tónica: C, Em, Am), naranja la 4ª (subdominante: F, Dm) y rojo la 7ª (dominante: G7, Bm♭5). Las dominantes se reconocen porque llevan a la vez la 4ª y la 7ª.",
+      "tipo": "progresion",
+      "eventos": [
+        { "cifrado": "C",      "notas": ["C4", "E4", "G4"],       "colores": ["", "verde", ""],           "dur": 1.0 },
+        { "cifrado": "Em",     "notas": ["E4", "G4", "B4"],       "colores": ["verde", "", ""],           "dur": 1.0 },
+        { "cifrado": "Am",     "notas": ["A4", "C5", "E5"],       "colores": ["", "", "verde"],           "dur": 1.0 },
+        { "cifrado": "F",      "notas": ["F4", "A4", "C5"],       "colores": ["naranja", "", ""],         "dur": 1.0 },
+        { "cifrado": "Dm",     "notas": ["D4", "F4", "A4"],       "colores": ["", "naranja", ""],         "dur": 1.0 },
+        { "cifrado": "G7",     "notas": ["G4", "B4", "D5", "F5"], "colores": ["", "rojo", "", "naranja"], "dur": 1.0 },
+        { "cifrado": "Bm(b5)", "notas": ["B4", "D5", "F5"],       "colores": ["rojo", "", "naranja"],     "dur": 1.0 }
+      ],
+      "modos": ["bloque", "arpegio"]
+    },
+    {
+      "id": "cap02-ej02",
+      "titulo": "Progresión (T–S–D–T)",
+      "descripcion": "El movimiento armónico más natural: del reposo a la tensión y de vuelta al reposo. Tónica → subdominante → dominante → tónica (C–F–G–C).",
+      "tipo": "progresion",
+      "eventos": [
+        { "cifrado": "C", "notas": ["C3", "E3", "G3"], "dur": 1.2 },
+        { "cifrado": "F", "notas": ["F3", "A3", "C4"], "dur": 1.2 },
+        { "cifrado": "G", "notas": ["G3", "B3", "D4"], "dur": 1.2 },
+        { "cifrado": "C", "notas": ["C3", "E3", "G3"], "dur": 1.2 }
+      ],
+      "modos": ["bloque", "arpegio"]
+    },
+    {
+      "id": "cap02-ej03",
+      "titulo": "Retrogresión (T–D–S–T)",
+      "descripcion": "El recorrido inverso a la progresión: tónica → dominante → subdominante → tónica (C–G–F–C). Suena distinto porque la tensión aparece antes y se distiende hacia el final.",
+      "tipo": "progresion",
+      "eventos": [
+        { "cifrado": "C", "notas": ["C3", "E3", "G3"], "dur": 1.2 },
+        { "cifrado": "G", "notas": ["G3", "B3", "D4"], "dur": 1.2 },
+        { "cifrado": "F", "notas": ["F3", "A3", "C4"], "dur": 1.2 },
+        { "cifrado": "C", "notas": ["C3", "E3", "G3"], "dur": 1.2 }
+      ],
+      "modos": ["bloque", "arpegio"]
+    }
+  ]
+}
